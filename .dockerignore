@@ -1,0 +1,33 @@
+# ============================================================
+# NomadCN API - .dockerignore
+#
+# 注意：此文件应放在 Docker 构建上下文根目录下生效。
+# 如果构建上下文为 /workspace，请将此文件复制或软链到 /workspace/.dockerignore
+# ============================================================
+
+# 构建产物
+**/bin/
+**/obj/
+
+# Git 版本控制
+.git
+**/.git/
+
+# IDE 配置
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+
+# Node 依赖（如有）
+**/node_modules/
+
+# 开发环境配置（可选，按需启用）
+# **/appsettings.Development.json
+
+# Docker 文件本身
+**/Dockerfile
+**/.dockerignore
+
+# 文档
+**/*.md

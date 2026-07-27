@@ -22,10 +22,6 @@ public class AppDbContext : DbContext
             e.Property(c => c.Latitude).HasPrecision(9, 6);
             e.Property(c => c.Longitude).HasPrecision(9, 6);
             e.Property(c => c.Tags).HasDefaultValue("[]");
-            e.Property(c => c.Description).HasColumnType("LONGTEXT");
-            e.Property(c => c.DeepLiving).HasColumnType("LONGTEXT");
-            e.Property(c => c.DeepCommunity).HasColumnType("LONGTEXT");
-            e.Property(c => c.DeepTips).HasColumnType("LONGTEXT");
         });
 
         // 用户表
