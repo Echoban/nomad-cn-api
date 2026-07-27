@@ -1,9 +1,12 @@
-# Render Blueprint - NomadCN 部署配置
-# 使用方法：
-# 1. 在 https://render.com 注册账号
-# 2. New > Blueprint > 选择 Echoban/nomad-cn-api 仓库
-# 3. Render 会自动识别此配置文件
-# 4. 部署完成后，在环境变量中设置 DATABASE_URL（Neon PostgreSQL 连接字符串）
+# Render Blueprint - NomadCN 一键部署配置
+# 使用方法：访问以下链接一键部署
+# https://dashboard.render.com/blueprint/new?repo=https://github.com/Echoban/nomad-cn-api
+
+databases:
+  - name: nomadcn-db
+    databaseName: nomadcn
+    user: nomadcn
+    ipAllowList: []
 
 services:
   - type: web
@@ -16,6 +19,10 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nomadcn-db
+          property: connectionString
       - key: JWT_KEY
         value: NomadCN_SecretKey_2026_VeryLongString_ForJWT_Auth_!@#$%^&*()
       - key: JWT_ISSUER
@@ -24,5 +31,3 @@ services:
         value: NomadCN
       - key: CORS_ALLOW_ALL
         value: "true"
-      - key: DATABASE_URL
-        sync: false  # 需要手动设置：Neon PostgreSQL 连接字符串

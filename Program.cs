@@ -11,11 +11,32 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ===== 数据库（PostgreSQL via Npgsql EF Core） =====
 // 优先从环境变量 DATABASE_URL 读取，其次从 ConnectionStrings:PostgreSQL，最后回退到 MySQL 连接字符串
-var postgresConn = Environment.GetEnvironmentVariable("DATABASE_URL")
+// 支持 postgres://user:pass@host:port/db 格式（Render/Neon 等平台标准格式）
+var rawConn = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("PostgreSQL")
     ?? builder.Configuration.GetConnectionString("MySQL");
+var postgresConn = ConvertPostgresUrl(rawConn);
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(postgresConn));
+
+// 将 postgres://user:pass@host:port/db 转换为 Npgsql 标准格式
+static string ConvertPostgresUrl(string? conn)
+{
+    if (string.IsNullOrWhiteSpace(conn)) return conn!;
+    if (!conn.StartsWith("postgres://") && !conn.StartsWith("postgresql://")) return conn;
+    try
+    {
+        var uri = new Uri(conn);
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var db = uri.AbsolutePath.TrimStart('/');
+        var userInfo = uri.UserInfo.Split(':');
+        var user = Uri.UnescapeDataString(userInfo[0]);
+        var pass = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
+    }
+    catch { return conn; }
+}
 
 // ===== Redis 缓存（可选） =====
 // 检查环境变量 REDIS_URL，如果不存在则使用 InMemoryCacheService
