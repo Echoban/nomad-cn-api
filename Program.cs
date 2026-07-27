@@ -9,15 +9,36 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== 数据库（PostgreSQL via Npgsql EF Core） =====
-// 优先从环境变量 DATABASE_URL 读取，其次从 ConnectionStrings:PostgreSQL，最后回退到 MySQL 连接字符串
-// 支持 postgres://user:pass@host:port/db 格式（Render/Neon 等平台标准格式）
-var rawConn = Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? builder.Configuration.GetConnectionString("PostgreSQL")
-    ?? builder.Configuration.GetConnectionString("MySQL");
-var postgresConn = ConvertPostgresUrl(rawConn);
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(postgresConn));
+// ===== 数据库 =====
+// 优先使用 PostgreSQL（环境变量 DATABASE_URL），无配置时回退到 SQLite（零配置部署）
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var usePostgres = !string.IsNullOrWhiteSpace(databaseUrl)
+    || !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("PostgreSQL"));
+
+if (usePostgres)
+{
+    var rawConn = databaseUrl
+        ?? builder.Configuration.GetConnectionString("PostgreSQL")
+        ?? builder.Configuration.GetConnectionString("MySQL");
+    var postgresConn = ConvertPostgresUrl(rawConn);
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseNpgsql(postgresConn));
+    Console.WriteLine("Using PostgreSQL database");
+}
+else
+{
+    // SQLite 零配置模式：数据文件存在 /data 目录（容器持久化）或当前目录
+    var sqlitePath = "/data/nomadcn.db";
+    var sqliteDir = Path.GetDirectoryName(sqlitePath);
+    if (!string.IsNullOrEmpty(sqliteDir) && !Directory.Exists(sqliteDir))
+    {
+        try { Directory.CreateDirectory(sqliteDir); }
+        catch { sqlitePath = "nomadcn.db"; } // 回退到当前目录
+    }
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseSqlite($"Data Source={sqlitePath}"));
+    Console.WriteLine($"Using SQLite database: {sqlitePath}");
+}
 
 // 将 postgres://user:pass@host:port/db 转换为 Npgsql 标准格式
 static string ConvertPostgresUrl(string? conn)

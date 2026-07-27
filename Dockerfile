@@ -1,15 +1,16 @@
 # ============================================================
-# NomadCN API - Dockerfile (多阶段构建)
+# NomadCN - Dockerfile (多阶段构建)
 # 支持在独立仓库中构建：自动从 GitHub 拉取前端代码
+# 默认使用 SQLite（零配置），也支持 PostgreSQL（设置 DATABASE_URL）
 #
 # 构建命令（在 nomad-cn-api 目录执行）：
-#   docker build -t nomadcn-api .
+#   docker build -t nomadcn .
 #
-# 运行命令：
-#   docker run -p 8080:8080 \
-#     -e DATABASE_URL="Host=xxx;Database=xxx;Username=xxx;Password=xxx;Port=5432" \
-#     -e JWT_KEY="your-secret-key" \
-#     nomadcn-api
+# 运行命令（SQLite 零配置）：
+#   docker run -p 8080:8080 nomadcn
+#
+# 运行命令（PostgreSQL）：
+#   docker run -p 8080:8080 -e DATABASE_URL="postgres://..." nomadcn
 # ============================================================
 
 # ===== Build stage =====
@@ -38,11 +39,14 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
 # 配置容器环境
-ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV PORT=8080
 
 # 从 build 阶段复制发布输出（包含 wwwroot 前端文件）
 COPY --from=build /app/publish ./
+
+# 创建数据目录（SQLite 数据文件存放位置）
+RUN mkdir -p /data
 
 # 暴露端口
 EXPOSE 8080
