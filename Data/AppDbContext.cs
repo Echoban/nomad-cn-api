@@ -10,6 +10,8 @@ public class AppDbContext : DbContext
     public DbSet<City> Cities => Set<City>();
     public DbSet<User> Users => Set<User>();
     public DbSet<CityLike> CityLikes => Set<CityLike>();
+    public DbSet<MapAnnotation> MapAnnotations => Set<MapAnnotation>();
+    public DbSet<CityComment> CityComments => Set<CityComment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +41,24 @@ public class AppDbContext : DbContext
             e.ToTable("city_likes");
             e.HasKey(l => l.Id);
             e.HasIndex(l => new { l.UserId, l.CityId }).IsUnique();
+        });
+
+        // 地图标注表
+        modelBuilder.Entity<MapAnnotation>(e =>
+        {
+            e.ToTable("map_annotations");
+            e.HasKey(a => a.Id);
+            e.HasIndex(a => a.CityName);
+            e.Property(a => a.Latitude).HasPrecision(9, 6);
+            e.Property(a => a.Longitude).HasPrecision(9, 6);
+        });
+
+        // 城市评论表
+        modelBuilder.Entity<CityComment>(e =>
+        {
+            e.ToTable("city_comments");
+            e.HasKey(c => c.Id);
+            e.HasIndex(c => c.CityName);
         });
     }
 }

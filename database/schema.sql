@@ -3,8 +3,8 @@
 -- 数据库: MySQL 8.0+
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS nomadcn CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE nomadcn;
+CREATE DATABASE IF NOT EXISTS learn_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE learn_db;
 
 -- 创建用户（如需）
 -- CREATE USER IF NOT EXISTS 'nomadcn'@'%' IDENTIFIED BY 'nomadcn2026';
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS cities (
     Nightlife INT DEFAULT 0,
     Coffee INT DEFAULT 0,
     Coworking INT DEFAULT 0,
-    Tags TEXT DEFAULT '[]',
+    Tags TEXT,
     ClimateType VARCHAR(20) DEFAULT '',
     Description LONGTEXT,
     Latitude DECIMAL(9,6) DEFAULT NULL,
@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS cities (
     DeepCommunity LONGTEXT,
     DeepTips LONGTEXT,
     DeepBestSeason VARCHAR(200) DEFAULT '',
+    DeepCons LONGTEXT,
     Score INT DEFAULT 0,
     Likes INT DEFAULT 0,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -75,4 +76,35 @@ CREATE TABLE IF NOT EXISTS city_likes (
     UNIQUE INDEX IX_city_likes_UserId_CityId (UserId, CityId),
     CONSTRAINT FK_CityLikes_User FOREIGN KEY (UserId) REFERENCES users(Id) ON DELETE CASCADE,
     CONSTRAINT FK_CityLikes_City FOREIGN KEY (CityId) REFERENCES cities(Id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 地图标注表（所有用户共享可见）
+CREATE TABLE IF NOT EXISTS map_annotations (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    CityName VARCHAR(50) NOT NULL,
+    Type VARCHAR(20) NOT NULL,
+    Latitude DECIMAL(9,6) NOT NULL,
+    Longitude DECIMAL(9,6) NOT NULL,
+    Content TEXT,
+    Color VARCHAR(20) DEFAULT '#00d9a3',
+    `Path` TEXT,
+    Username VARCHAR(20),
+    UserId INT NULL,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX IX_map_annotations_CityName (CityName)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===== 城市评论表 =====
+CREATE TABLE IF NOT EXISTS city_comments (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    CityName VARCHAR(50) NOT NULL,
+    Content VARCHAR(500) NOT NULL,
+    Rating INT DEFAULT 5,
+    Username VARCHAR(50) NOT NULL,
+    AvatarLetter VARCHAR(5) DEFAULT 'U',
+    AvatarColor VARCHAR(20) DEFAULT '#00d9a5',
+    UserId INT NULL,
+    IsBot TINYINT(1) DEFAULT 0,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX IX_city_comments_CityName (CityName)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

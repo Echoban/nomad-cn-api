@@ -19,3 +19,9 @@ appsettings.Local.json
 
 # Logs
 *.log
+
+# Publish output
+publish/
+
+# Deployed frontend copies (synced from nomad-cn)
+wwwroot/

@@ -73,6 +73,9 @@ public class City
     [MaxLength(200)]
     public string DeepBestSeason { get; set; } = string.Empty;
 
+    // 城市缺点深度解读
+    public string DeepCons { get; set; } = string.Empty;
+
     // 综合评分（运行时计算或预存）
     public int Score { get; set; }
 

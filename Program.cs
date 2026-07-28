@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using NomadCN.Api.Data;
 using NomadCN.Api.Services;
 using StackExchange.Redis;
@@ -10,12 +11,21 @@ using StackExchange.Redis;
 var builder = WebApplication.CreateBuilder(args);
 
 // ===== 数据库 =====
-// 优先使用 PostgreSQL（环境变量 DATABASE_URL），无配置时回退到 SQLite（零配置部署）
+// 优先使用 MySQL（ConnectionStrings:MySQL），其次 PostgreSQL（环境变量 DATABASE_URL），最后回退到 SQLite（零配置部署）
+var mysqlConn = builder.Configuration.GetConnectionString("MySQL");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 var usePostgres = !string.IsNullOrWhiteSpace(databaseUrl)
     || !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("PostgreSQL"));
 
-if (usePostgres)
+if (!string.IsNullOrWhiteSpace(mysqlConn))
+{
+    // MySQL 模式：使用 Pomelo 驱动连接 MySQL
+    var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseMySql(mysqlConn, serverVersion));
+    Console.WriteLine("Using MySQL database");
+}
+else if (usePostgres)
 {
     var rawConn = databaseUrl
         ?? builder.Configuration.GetConnectionString("PostgreSQL")
@@ -169,8 +179,9 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // ===== 端口：监听环境变量 PORT，默认 5000 =====
+// IIS inprocess 模式下端口由 IIS 管理，app.Urls 为只读集合，需捕获异常
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Urls.Add($"http://*:{port}");
+try { app.Urls.Add($"http://*:{port}"); } catch { /* IIS inprocess 模式下端口由 IIS 管理 */ }
 
 // ===== 自动建表 + 数据迁移 + 数据播种 =====
 using (var scope = app.Services.CreateScope())
